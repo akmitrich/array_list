@@ -9,26 +9,28 @@ use std::{
 use crate::IArray;
 
 #[derive(Debug)]
-pub struct Array<T> {
+pub struct VectorArray<T> {
     ptr: NonNull<T>,
     cap: usize,
     len: usize,
+    vector: usize,
     _marker: PhantomData<T>,
 }
 
-impl<T> Default for Array<T> {
+impl<T> Default for VectorArray<T> {
     fn default() -> Self {
         assert!(mem::size_of::<T>() != 0, "We're not ready to handle ZSTs");
-        Array {
+        VectorArray {
             ptr: NonNull::dangling(),
             len: 0,
             cap: 0,
+            vector: 5,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T> Drop for Array<T> {
+impl<T> Drop for VectorArray<T> {
     fn drop(&mut self) {
         if self.cap != 0 {
             while self.pop().is_some() {}
@@ -40,22 +42,25 @@ impl<T> Drop for Array<T> {
     }
 }
 
-impl<T> Deref for Array<T> {
+impl<T> Deref for VectorArray<T> {
     type Target = [T];
     fn deref(&self) -> &[T] {
         unsafe { std::slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl<T> DerefMut for Array<T> {
+impl<T> DerefMut for VectorArray<T> {
     fn deref_mut(&mut self) -> &mut [T] {
         unsafe { std::slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
     }
 }
 
-impl<T> Array<T> {
-    pub fn new() -> Self {
-        Default::default()
+impl<T> VectorArray<T> {
+    pub fn new(vector: usize) -> Self {
+        Self {
+            vector,
+            ..Default::default()
+        }
     }
 
     pub fn pop(&mut self) -> Option<T> {
@@ -68,17 +73,8 @@ impl<T> Array<T> {
     }
 
     fn grow(&mut self) {
-        let (new_cap, new_layout) = if self.cap == 0 {
-            (1, Layout::array::<T>(1).unwrap())
-        } else {
-            // This can't overflow since self.cap <= isize::MAX.
-            let new_cap = 2 * self.cap;
-            // `Layout::array` checks that the number of bytes is <= usize::MAX,
-            // but this is redundant since old_layout.size() <= isize::MAX,
-            // so the `unwrap` should never fail.
-            let new_layout = Layout::array::<T>(new_cap).unwrap();
-            (new_cap, new_layout)
-        };
+        let new_cap = self.vector + self.cap;
+        let new_layout = Layout::array::<T>(new_cap).unwrap();
         // Ensure that the new allocation doesn't exceed `isize::MAX` bytes.
         assert!(
             new_layout.size() <= isize::MAX as usize,
@@ -100,7 +96,7 @@ impl<T> Array<T> {
     }
 }
 
-impl<T> IArray<T> for Array<T> {
+impl<T> IArray<T> for VectorArray<T> {
     fn size(&self) -> usize {
         self.len
     }
@@ -114,15 +110,12 @@ impl<T> IArray<T> for Array<T> {
     }
 
     fn insert(&mut self, elem: T, index: usize) {
-        // Note: `<=` because it's valid to insert after everything
-        // which would be equivalent to push.
         assert!(index <= self.len, "index out of bounds");
         if self.cap == self.len {
             self.grow();
         }
 
         unsafe {
-            // ptr::copy(src, dest, len): "copy from src to dest len elems"
             ptr::copy(
                 self.ptr.as_ptr().add(index),
                 self.ptr.as_ptr().add(index + 1),
@@ -134,7 +127,6 @@ impl<T> IArray<T> for Array<T> {
     }
 
     fn remove(&mut self, index: usize) -> T {
-        // Note: `<` because it's *not* valid to remove after everything
         assert!(index < self.len, "index out of bounds");
         unsafe {
             self.len -= 1;
@@ -155,7 +147,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut bytes = Array::<u8>::new();
+        let mut bytes = VectorArray::<u8>::new(10);
         bytes.push(42);
         assert_eq!(42, bytes.pop().unwrap());
         assert!(bytes.pop().is_none());
@@ -163,7 +155,7 @@ mod tests {
 
     #[test]
     fn bells_and_whistles() {
-        let mut bytes = Array::<u8>::new();
+        let mut bytes = VectorArray::<u8>::new(10);
         (0..=u8::MAX).for_each(|x| bytes.push(x));
         assert_eq!(256, bytes.len());
         assert_eq!(22, bytes[22]);
@@ -175,7 +167,7 @@ mod tests {
 
     #[test]
     fn array_interface() {
-        let mut array = Array::<i64>::new();
+        let mut array = VectorArray::<i64>::new(10);
         array.insert(42, 0);
         array.insert(1024, 0);
         array.insert(-339, 2);
