@@ -6,6 +6,9 @@ use std::{
     ptr::{self, NonNull},
 };
 
+use crate::IArray;
+
+#[derive(Debug)]
 pub struct Array<T> {
     ptr: NonNull<T>,
     cap: usize,
@@ -59,15 +62,6 @@ impl<T> Array<T> {
         Default::default()
     }
 
-    pub fn push(&mut self, elem: T) {
-        if self.len == self.cap { self.grow(); }
-        unsafe {
-            ptr::write(self.ptr.as_ptr().add(self.len), elem);
-        }
-        // Can't fail, we'll OOM first.
-        self.len += 1;
-    }
-
     pub fn pop(&mut self) -> Option<T> {
         if self.len == 0 {
             None
@@ -109,6 +103,54 @@ impl<T> Array<T> {
     }
 }
 
+impl<T> IArray<T> for Array<T> {
+    fn size(&self) -> usize {
+        self.len()
+    }
+
+    fn push(&mut self, elem: T) {
+        if self.len == self.cap { self.grow(); }
+        unsafe {
+            ptr::write(self.ptr.as_ptr().add(self.len), elem);
+        }
+        // Can't fail, we'll OOM first.
+        self.len += 1;
+    }
+
+    fn get(&self, index: usize) -> &T {
+        (self as &[T]).get(index).unwrap()
+    }
+
+    fn insert(&mut self, elem: T, index: usize) {
+        // Note: `<=` because it's valid to insert after everything
+        // which would be equivalent to push.
+        assert!(index <= self.len, "index out of bounds");
+        if self.cap == self.len { self.grow(); }
+
+        unsafe {
+            // ptr::copy(src, dest, len): "copy from src to dest len elems"
+            ptr::copy(self.ptr.as_ptr().add(index),
+                    self.ptr.as_ptr().add(index + 1),
+                    self.len - index);
+            ptr::write(self.ptr.as_ptr().add(index), elem);
+            self.len += 1;
+        }
+    }
+
+    fn remove(&mut self, index: usize) -> T {
+        // Note: `<` because it's *not* valid to remove after everything
+        assert!(index < self.len, "index out of bounds");
+        unsafe {
+            self.len -= 1;
+            let result = ptr::read(self.ptr.as_ptr().add(index));
+            ptr::copy(self.ptr.as_ptr().add(index + 1),
+                    self.ptr.as_ptr().add(index),
+                    self.len - index);
+            result
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,6 +172,23 @@ mod tests {
         bytes[255] = 42;
         assert_eq!(&42, bytes.last().unwrap());
         *bytes.first_mut().unwrap() = 255;
-        assert_eq!(*bytes.first().unwrap(), bytes.get(254).unwrap() + 1);
+        assert_eq!(*bytes.first().unwrap(), bytes.get(254) + 1);
+    }
+
+    #[test]
+    fn array_interface() {
+        let mut array = Array::<i64>::new();
+        array.insert(42, 0);
+        array.insert(1024, 0);
+        array.insert(-339, 2);
+        array.insert(-851, 1);
+        assert_eq!(&1024, array.get(0));
+        assert_eq!(&(-851), array.get(1));
+        assert_eq!(&42, array.get(2));
+        assert_eq!(&(-339), array.get(3));
+        assert_eq!(1024, array.remove(0));
+        assert_eq!(&(-851), array.get(0));
+        assert_eq!(&42, array.get(1));
+        assert_eq!(&(-339), array.get(2));
     }
 }
