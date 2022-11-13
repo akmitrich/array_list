@@ -1,4 +1,5 @@
 pub mod array;
+pub mod matrix_array;
 pub mod single_array;
 pub mod vector_array;
 
