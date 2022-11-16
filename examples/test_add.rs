@@ -1,8 +1,8 @@
 use std::time::{Duration, Instant};
 
 use array_list::{
-    array::Array, matrix_array::MatrixArray, single_array::SingleArray, vector_array::VectorArray,
-    IArray, Wrapper, sparse_array::SparseArray,
+    array::Array, matrix_array::MatrixArray, single_array::SingleArray, sparse_array::SparseArray,
+    vector_array::VectorArray, IArray, Wrapper,
 };
 
 fn main() {

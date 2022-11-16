@@ -87,13 +87,17 @@ impl<T: Default + PartialEq> IArray<T> for SparseArray<T> {
         self.len -= 1;
         match self.find_inner_value(index) {
             Some(_) => {
-                let pos = self.inner.iter().position(|current| current.index == index).unwrap();
+                let pos = self
+                    .inner
+                    .iter()
+                    .position(|current| current.index == index)
+                    .unwrap();
                 let to_return = self.inner.remove(pos).value;
                 for v in self.inner.iter_mut().skip(pos) {
                     v.index -= 1;
                 }
                 to_return
-            },
+            }
             None => {
                 for v in self.inner.iter_mut() {
                     if v.index > index {
