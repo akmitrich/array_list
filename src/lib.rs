@@ -3,6 +3,7 @@ pub mod list;
 pub mod matrix_array;
 pub mod priority_queue;
 pub mod single_array;
+pub mod sparse_array;
 pub mod vector_array;
 
 pub trait IArray<T> {

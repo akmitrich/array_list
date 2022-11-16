@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use array_list::{
     array::Array, matrix_array::MatrixArray, single_array::SingleArray, vector_array::VectorArray,
-    IArray, Wrapper,
+    IArray, Wrapper, sparse_array::SparseArray,
 };
 
 fn main() {
@@ -13,6 +13,7 @@ fn main() {
     run_test("Factor array (aka Array)", Array::new);
     run_test("Matrix array(10)", || MatrixArray::new(10));
     run_test("Matrix array (100)", || MatrixArray::new(100));
+    run_test("Sparse array", SparseArray::new);
 }
 
 fn run_test<F, Array>(title: &str, create: F)

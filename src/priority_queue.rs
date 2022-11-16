@@ -44,7 +44,7 @@ impl<T> PriorityQueue<T> {
     }
 
     fn get_position_for_new_priority(&self, p: i64) -> usize {
-// TODO! refactor get_position to binary search
+        // TODO! refactor get_position to binary search
         let queue_len = self.queue.len();
         let mut pos = 0;
         while pos < queue_len && self.queue[pos].priority > p {
