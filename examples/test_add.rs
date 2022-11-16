@@ -1,10 +1,13 @@
 use std::time::{Duration, Instant};
 
-use array_list::{IArray, single_array::SingleArray, vector_array::VectorArray, Wrapper, array::Array, matrix_array::MatrixArray};
+use array_list::{
+    array::Array, matrix_array::MatrixArray, single_array::SingleArray, vector_array::VectorArray,
+    IArray, Wrapper,
+};
 
 fn main() {
     run_test("Standard Vec", Wrapper::new);
-    run_test("Single array",SingleArray::new);
+    run_test("Single array", SingleArray::new);
     run_test("Vector array (10)", || VectorArray::new(10));
     run_test("Vector array (100)", || VectorArray::new(10));
     run_test("Factor array (aka Array)", Array::new);
@@ -12,13 +15,18 @@ fn main() {
     run_test("Matrix array (100)", || MatrixArray::new(100));
 }
 
-fn run_test<F, Array>(title: &str, create: F) 
-where F: Fn() -> Array,
-Array: IArray<i64> {
+fn run_test<F, Array>(title: &str, create: F)
+where
+    F: Fn() -> Array,
+    Array: IArray<i64>,
+{
     for i in 1..9 {
         let mut a = create();
         let n = 10_usize.pow(i);
-        println!("{title}: n = {n}, complete in {:?}", test_add_integers(&mut a, n));
+        println!(
+            "{title}: n = {n}, complete in {:?}",
+            test_add_integers(&mut a, n)
+        );
     }
 }
 

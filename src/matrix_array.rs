@@ -14,7 +14,7 @@ impl<T: Debug> Default for MatrixArray<T> {
         Self {
             inner: Default::default(),
             size: 0,
-            vector: 5, 
+            vector: 5,
         }
     }
 }
@@ -59,7 +59,10 @@ impl<T: Debug> IArray<T> for MatrixArray<T> {
 
 impl<T: Debug> MatrixArray<T> {
     pub fn new(vector: usize) -> Self {
-        Self { vector, ..Default::default() }
+        Self {
+            vector,
+            ..Default::default()
+        }
     }
 
     pub fn repr(&self) -> String {
@@ -103,7 +106,7 @@ impl<T: Debug> MatrixArray<T> {
             let shifted = self.inner[inner_index].remove(0);
             let prev = self.inner.get_mut(inner_index - 1).unwrap();
             prev.push(shifted);
-        }   
+        }
     }
 }
 
