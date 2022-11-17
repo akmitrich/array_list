@@ -27,23 +27,23 @@ impl<T> PriorityQueue<T> {
     }
 
     fn find_priority_or_insert_new(&mut self, p: i64) -> &mut Priority<T> {
-        match self.find_priority_position(p) {
+        match self.find_priority_pos(p) {
             Some(position) => &mut self.queue[position],
             None => self.insert_new_priority(p),
         }
     }
 
-    fn find_priority_position(&self, p: i64) -> Option<usize> {
+    fn find_priority_pos(&self, p: i64) -> Option<usize> {
         self.queue.iter().position(|current| current.priority == p)
     }
 
     fn insert_new_priority(&mut self, p: i64) -> &mut Priority<T> {
-        let pos = self.get_position_for_new_priority(p);
+        let pos = self.get_pos_for_new_priority(p);
         self.queue.insert(Priority::new(p), pos);
         &mut self.queue[pos]
     }
 
-    fn get_position_for_new_priority(&self, p: i64) -> usize {
+    fn get_pos_for_new_priority(&self, p: i64) -> usize {
         // TODO! refactor get_position to binary search
         let queue_len = self.queue.len();
         let mut pos = 0;
@@ -80,7 +80,7 @@ impl<T> Stack<T> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.inner.len() == 0
+        self.inner.size() == 0
     }
 
     pub fn push(&mut self, elem: T) {

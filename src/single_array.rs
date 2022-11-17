@@ -70,7 +70,6 @@ impl<T> SingleArray<T> {
     fn grow(&mut self) {
         let new_cap = 1 + self.cap;
         let new_layout = Layout::array::<T>(new_cap).unwrap();
-        // Ensure that the new allocation doesn't exceed `isize::MAX` bytes.
         assert!(
             new_layout.size() <= isize::MAX as usize,
             "Allocation too large"

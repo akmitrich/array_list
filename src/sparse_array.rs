@@ -19,20 +19,40 @@ impl<T: Default + PartialEq> SparseArray<T> {
         self.inner.iter().find(|current| current.index == index)
     }
 
+    fn find_inner_pos(&self, index: usize) -> Option<usize> {
+        self.inner.iter().position(|current| current.index == index)
+    }
+
     fn inner_insert(&mut self, elem: T, index: usize) {
-        let mut pos = 0;
-        while pos < self.inner.len() && index > self.inner[pos].index {
-            pos += 1;
-        }
-        for v in self.inner.iter_mut().skip(pos) {
-            v.index += 1;
-        }
         self.len += 1;
+        let pos = self.find_pos_to_insert_value(index);
+        self.shift_indice_right_after_pos(pos, 1);
         if self.zero != elem {
             self.inner.insert(Value::new(index, elem), pos);
         }
     }
 
+    fn find_pos_to_insert_value(&self, index: usize) -> usize {
+        let mut pos = 0;
+        while pos < self.inner.len() && index > self.inner[pos].index {
+            pos += 1;
+        }
+        pos
+    }
+
+    // in Rust we cannot add signed number to unsigned number
+    fn shift_indice_left_after_pos(&mut self, pos: usize, by: usize) {
+        for v in self.inner.iter_mut().skip(pos) {
+            v.index -= by;
+        }
+    }
+
+    fn shift_indice_right_after_pos(&mut self, pos: usize, by: usize) {
+        for v in self.inner.iter_mut().skip(pos) {
+            v.index += by;
+        }
+    }
+    
     pub fn repr(&self) -> String
     where
         T: std::fmt::Display,
@@ -85,25 +105,14 @@ impl<T: Default + PartialEq> IArray<T> for SparseArray<T> {
     fn remove(&mut self, index: usize) -> T {
         assert!(index < self.len);
         self.len -= 1;
-        match self.find_inner_value(index) {
-            Some(_) => {
-                let pos = self
-                    .inner
-                    .iter()
-                    .position(|current| current.index == index)
-                    .unwrap();
-                let to_return = self.inner.remove(pos).value;
-                for v in self.inner.iter_mut().skip(pos) {
-                    v.index -= 1;
-                }
-                to_return
+        match self.find_inner_pos(index) {
+            Some(pos) => {
+                self.shift_indice_left_after_pos(pos + 1, 1);
+                self.inner.remove(pos).value
             }
             None => {
-                for v in self.inner.iter_mut() {
-                    if v.index > index {
-                        v.index -= 1;
-                    }
-                }
+                let pos = self.find_pos_to_insert_value(index);
+                self.shift_indice_left_after_pos(pos, 1);
                 Default::default()
             }
         }
@@ -144,6 +153,7 @@ mod tests {
         assert_eq!(&3, a.get(42));
         assert_eq!(&0, a.get(45));
         a.remove(55); // index of 4 becomes 104
+        assert_eq!(&4, a.get(104));
         a.remove(33); // index of 2 becomes 43, index of 3 becomes 41, index of 4 becomes 103
         a.remove(42); // index of 2 becomes 42, index of 4 becomes 102
         a.remove(28); // index of 2 becomes 41, index of 3 becomes 40, index of 4 becomes 101

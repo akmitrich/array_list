@@ -102,9 +102,9 @@ impl<T: Debug> MatrixArray<T> {
     }
 
     fn shift_after_remove(&mut self, inner_index: usize) {
-        for inner_index in (inner_index + 1)..self.inner.size() {
-            let shifted = self.inner[inner_index].remove(0);
-            let prev = self.inner.get_mut(inner_index - 1).unwrap();
+        for matrix_index in (inner_index + 1)..self.inner.size() {
+            let shifted = self.inner[matrix_index].remove(0);
+            let prev = self.inner.get_mut(matrix_index - 1).unwrap();
             prev.push(shifted);
         }
     }

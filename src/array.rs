@@ -114,15 +114,11 @@ impl<T> IArray<T> for Array<T> {
     }
 
     fn insert(&mut self, elem: T, index: usize) {
-        // Note: `<=` because it's valid to insert after everything
-        // which would be equivalent to push.
         assert!(index <= self.len, "index out of bounds");
         if self.cap == self.len {
             self.grow();
         }
-
         unsafe {
-            // ptr::copy(src, dest, len): "copy from src to dest len elems"
             ptr::copy(
                 self.ptr.as_ptr().add(index),
                 self.ptr.as_ptr().add(index + 1),
